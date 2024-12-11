@@ -6,69 +6,28 @@ fn parse(input: &str) -> Vec<i64> {
     input.split(' ').map(|s| s.parse::<i64>().unwrap()).collect::<Vec<i64>>()
 }
 
-fn calc(input: &str, blinks: usize) -> Option<usize> {
-    let nums = parse(input);
-    let mut list = nums.clone();
-    for _ in 0..blinks {
-        let mut new_list = Vec::new();
-        for num in list {
-            if num == 0 {
-                new_list.push(1);
-            } else {
-                let num_digits = ((num as f64).log(10.0) + 1.0).floor() as i64;
-                if num_digits % 2 == 0 {
-                    new_list.push(num / 10_i64.pow((num_digits / 2) as u32));
-                    new_list.push(num % 10_i64.pow((num_digits / 2) as u32));
-                } else {
-                    new_list.push(num * 2024);
-                }
-            }
-        }
-        list = new_list;
-    }
-    Some(list.len())
-}
-
-pub fn part_one(input: &str) -> Option<usize> {
-    calc(input, 25)
-}
-
-pub fn part_two(input: &str) -> Option<u64> {
+fn calc(input: &str, blinks: usize) -> Option<u64> {
     let nums = parse(input);
     let mut hm:HashMap<i64, u64> = HashMap::new();
     for n in nums {
-        if !hm.contains_key(&n) {
-            hm.insert(n, 0);
-        }
-        *hm.get_mut(&n).unwrap() += 1;
+        *hm.entry(n).or_insert(0) += 1;
     }
-    for _ in 0..75 {
+    for _ in 0..blinks {
         let mut new_hm:HashMap<i64, u64> = HashMap::new();
         for (num, count) in &hm {
             if *num == 0 {
-                if !new_hm.contains_key(&1) {
-                    new_hm.insert(1, 0);
-                }
-                *new_hm.get_mut(&1).unwrap() += count;
+                *new_hm.entry(1).or_insert(0) += count;
             } else {
                 let num_digits = ((*num as f64).log(10.0) + 1.0).floor() as i64;
                 if num_digits % 2 == 0 {
                     let left = num / 10_i64.pow((num_digits / 2) as u32);
-                    if !new_hm.contains_key(&left) {
-                        new_hm.insert(left, 0);
-                    }
-                    *new_hm.get_mut(&left).unwrap() += count;
+                    *new_hm.entry(left).or_insert(0) += count;
+
                     let right = num % 10_i64.pow((num_digits / 2) as u32);
-                    if !new_hm.contains_key(&right) {
-                        new_hm.insert(right, 0);
-                    }
-                    *new_hm.get_mut(&right).unwrap() += count;
+                    *new_hm.entry(right).or_insert(0) += count;
                 } else {
                     let new_val = num * 2024;
-                    if !new_hm.contains_key(&new_val) {
-                        new_hm.insert(new_val, 0);
-                    }
-                    *new_hm.get_mut(&new_val).unwrap() += count;
+                    *new_hm.entry(new_val).or_insert(0) += count;
                 }
             }
         }
@@ -76,6 +35,14 @@ pub fn part_two(input: &str) -> Option<u64> {
     }
     let total = hm.iter().map(|(_, v)| v).sum::<u64>();
     Some(total)
+}
+
+pub fn part_one(input: &str) -> Option<u64> {
+    calc(input, 25)
+}
+
+pub fn part_two(input: &str) -> Option<u64> {
+    calc(input, 75)
 }
 
 #[cfg(test)]
