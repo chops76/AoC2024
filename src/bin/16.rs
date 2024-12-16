@@ -3,7 +3,6 @@ advent_of_code::solution!(16);
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::collections::HashSet;
-use std::collections::VecDeque;
 use std::collections::HashMap;
 
 #[derive(Clone, Eq, PartialEq)]
@@ -12,14 +11,11 @@ struct State {
     facing: char,
     x_pos: usize,
     y_pos: usize,
-    visited: Vec<(usize, usize, char)>
+    visited: Vec<(usize, usize)>
 }
 
 impl Ord for State {
     fn cmp(&self, other: &Self) -> Ordering {
-        // Notice that we flip the ordering on costs.
-        // In case of a tie we compare positions - this step is necessary
-        // to make implementations of `PartialEq` and `Ord` consistent.
         other.score.cmp(&self.score)
     }
 }
@@ -88,7 +84,8 @@ pub fn part_one(input: &str) -> Option<usize> {
 
 pub fn part_two(input: &str) -> Option<usize> {
     let board = parse(input);
-
+    let score = part_one(input).unwrap();
+    let wanted_moves = score % 1000;
     let mut start_x = 0;
     let mut start_y = 0;
     let mut end_x = 0;
@@ -112,7 +109,10 @@ pub fn part_two(input: &str) -> Option<usize> {
     heap.push(State { score: 0, facing: 'E', x_pos: start_x, y_pos: start_y, visited: Vec::new() });
     while let Some(State { score, facing, x_pos, y_pos, visited }) = heap.pop() {
         let mut new_visited = visited.clone();
-        new_visited.push((x_pos, y_pos, facing));
+        new_visited.push((x_pos, y_pos));
+        if new_visited.len() > wanted_moves + 1 {
+            continue;
+        }
         if score > found_score {
             break;
         }
@@ -138,11 +138,11 @@ pub fn part_two(input: &str) -> Option<usize> {
             heap.push(State { score: score + 1, facing: 'S', x_pos: x_pos, y_pos: y_pos + 1, visited: new_visited.clone()  });
         }
         if facing == 'E' || facing == 'W' {
-            heap.push(State { score: score + 1000, facing: 'N', x_pos: x_pos, y_pos: y_pos, visited: new_visited.clone()  });
-            heap.push(State { score: score + 1000, facing: 'S', x_pos: x_pos, y_pos: y_pos, visited: new_visited.clone()  });
+            heap.push(State { score: score + 1000, facing: 'N', x_pos: x_pos, y_pos: y_pos, visited: visited.clone()  });
+            heap.push(State { score: score + 1000, facing: 'S', x_pos: x_pos, y_pos: y_pos, visited: visited.clone()  });
         } else {
-            heap.push(State { score: score + 1000, facing: 'E', x_pos: x_pos, y_pos: y_pos, visited: new_visited.clone()  });
-            heap.push(State { score: score + 1000, facing: 'W', x_pos: x_pos, y_pos: y_pos, visited: new_visited.clone()  });
+            heap.push(State { score: score + 1000, facing: 'E', x_pos: x_pos, y_pos: y_pos, visited: visited.clone()  });
+            heap.push(State { score: score + 1000, facing: 'W', x_pos: x_pos, y_pos: y_pos, visited: visited.clone()  });
         }
     }
     Some(all_seen.len())
