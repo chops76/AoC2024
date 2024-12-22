@@ -1,6 +1,7 @@
 advent_of_code::solution!(22);
 
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 fn parse(input: &str) -> Vec<i64> {
     input.lines().map(|l| l.parse::<i64>().unwrap()).collect::<Vec<i64>>()
@@ -39,15 +40,23 @@ fn calc_deltas(vals: &Vec<i64>) -> Vec<i64> {
     vals.iter().zip(vals.iter().skip(1)).map(|(a, b)| b - a).collect::<Vec<i64>>()
 }
 
-fn calc_map(vals: &Vec<i64>) -> HashMap<(i64, i64, i64, i64), i64> {
+fn calc_map(vals: &Vec<Vec<i64>>) -> HashMap<(i64, i64, i64, i64), i64> {
     let mut ret_map = HashMap::new();
-    let deltas = calc_deltas(vals);
-    for i in 0..deltas.len() - 3 {
-        let seq = (deltas[i], deltas[i+1], deltas[i+2], deltas[i+3]);
-        if !ret_map.contains_key(&seq) {
-            ret_map.insert(seq, vals[i+4]);
+    for monkey in vals {
+        let deltas = calc_deltas(monkey);
+        let mut seen = HashSet::new();
+        for i in 0..deltas.len() - 3 {
+            let seq = (deltas[i], deltas[i+1], deltas[i+2], deltas[i+3]);
+            if !seen.contains(&seq) {
+                if !ret_map.contains_key(&seq) {
+                    ret_map.insert(seq, 0);
+                }
+                *ret_map.get_mut(&seq).unwrap() += monkey[i + 4];
+                seen.insert(seq);
+            }
         }
     }
+
     ret_map
 }
 
@@ -59,26 +68,8 @@ pub fn part_one(input: &str) -> Option<i64> {
 pub fn part_two(input: &str) -> Option<i64> {
     let vals = parse(input);
     let prices = vals.iter().map(|&v| find_prices(v, 2000)).collect::<Vec<Vec<i64>>>();
-    let maps = prices.iter().map(|v| calc_map(v)).collect::<Vec<HashMap<(i64, i64, i64, i64), i64>>>();
-    let mut best: i64 = 0;
-    for a in -9..10 {
-        for b in -9..10 {
-            for c in -9..10 {
-                for d in -9..10 {
-                    let mut sum = 0;
-                    for m in &maps {
-                        if m.contains_key(&(a, b, c, d)) {
-                            sum += m[&(a, b, c, d)];
-                        }
-                    }
-                    if sum > best {
-                        best = sum;
-                    }
-                }
-            }
-        }
-    }
-    Some(best)
+    let seq_map = calc_map(&prices); 
+    Some(*seq_map.iter().map(|(_, v)| v).max().unwrap())
 }
 
 #[cfg(test)]
